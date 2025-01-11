@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Detection</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #222831; /* Dark background */
+      color: #eeeeee; /* Light text for readability */
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      max-width: 1200px;
+    }
+    h1 {
+      color: #F8B195; /* Light pink */
+      margin-bottom: 40px;
+      font-weight: bold;
+    }
+    p, .description {
+      color: #cccccc;
+      margin-bottom: 20px;
+    }
+    #camera-container {
+      position: relative;
+      margin-bottom: 30px;
+    }
+    video, canvas {
+      max-width: 100%;
+      border-radius: 10px;
+    }
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border-radius: 10px;
+    }
+    .instructions {
+      background-color: #F67280; /* Coral pink */
+      padding: 20px;
+      border-radius: 10px;
+      color: #222831; /* Dark background for text readability */
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+    }
+    .description {
+      font-size: 0.85rem;
+      margin-top: 8px;
+      color: #cccccc;
+    }
+    .alert-info {
+      background-color: #6C5B7B; /* Dusty purple */
+      color: #eeeeee;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .btn-custom {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container text-center my-5">
+    <h1>SMART DASHCAM DETECTION SYSTEM</h1>
+    <p class="lead">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas id tortor luctus, volutpat justo sit amet, sodales odio. Etiam pellentesque id neque nec finibus. Nunc sodales accumsan est, et condimentum nibh rutrum a. Fusce eget dui sit amet nibh efficitur euismod non ut nisi. Morbi lacinia est vel ipsum imperdiet porttitor. Curabitur quis ex quis diam elementum dapibus. Ut condimentum, mi eget cursus interdum, justo odio consectetur elit, vitae pharetra mauris eros in magna</p>
+
+    <!-- Toggle Switches for all models -->
+    <div class="mb-3">
+      <label for="toggleWeaponDetection" class="form-label text-light">Enable Weapon Detection</label>
+      <input type="checkbox" class="form-check-input" id="toggleWeaponDetection" checked>
+    </div>
+    <div class="mb-3">
+      <label for="toggleFacialExpression" class="form-label text-light">Enable Facial Expression Detection</label>
+      <input type="checkbox" class="form-check-input" id="toggleFacialExpression" checked>
+    </div>
+    <div class="mb-3">
+      <label for="toggleSeatbeltDetection" class="form-label text-light">Enable Seatbelt Detection</label>
+      <input type="checkbox" class="form-check-input" id="toggleSeatbeltDetection" checked>
+    </div>
+    <div class="mb-3">
+      <label for="toggleDistractedDriving" class="form-label text-light">Enable Distracted Driving Detection</label>
+      <input type="checkbox" class="form-check-input" id="toggleDistractedDriving" checked>
+    </div>
+    <div class="mb-3">
+      <label for="toggleSleepDetection" class="form-label text-light">Enable Sleep Detection</label>
+      <input type="checkbox" class="form-check-input" id="toggleSleepDetection" checked>
+    </div>
+    <div class="mb-3">
+      <label for="toggleFireDetection" class="form-label text-light">Enable Fire Detection</label>
+      <input type="checkbox" class="form-check-input" id="toggleFireDetection" checked>
+    </div>
+    <!-- Toggle for Smoke Detection -->
+    <div class="mb-3">
+      <label for="toggleSmokeDetection" class="form-label text-light">Enable Smoke Detection</label>
+      <input type="checkbox" class="form-check-input" id="toggleSmokeDetection" checked>
+    </div>
+
+    <!-- Camera and overlay setup -->
+    <div id="camera-container">
+      <video id="camera" autoplay playsinline width="640" height="480"></video>
+      <canvas id="overlay" width="640" height="480"></canvas>
+    </div>
+
+    <!-- Prediction Output Section -->
+    <div id="prediction-output" class="alert-info">
+      <h4>Detected Objects:</h4>
+      <ul id="predictions-list">
+        <!-- Dynamic predictions will be displayed here -->
+      </ul>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const video = document.getElementById("camera");
+    const overlay = document.getElementById("overlay");
+    const ctx = overlay.getContext("2d");
+    const predictionsList = document.getElementById("predictions-list");
+    const toggleWeaponDetection = document.getElementById("toggleWeaponDetection");
+    const toggleFacialExpression = document.getElementById("toggleFacialExpression");
+    const toggleSeatbeltDetection = document.getElementById("toggleSeatbeltDetection");
+    const toggleDistractedDriving = document.getElementById("toggleDistractedDriving");
+    const toggleSleepDetection = document.getElementById("toggleSleepDetection");
+    const toggleFireDetection = document.getElementById("toggleFireDetection");
+    const toggleSmokeDetection = document.getElementById("toggleSmokeDetection");
+
+    const API_URL = "https://detect.roboflow.com";
+    const API_KEY = "sIvcdF5dTERO1fBXBw4v";
+    const WEAPON_MODEL_ID = "weapon-detection-dinou-qdunh/1";
+    const FACIAL_MODEL_ID = "facial-expression-ai-solution/1";
+    const SEATBELT_MODEL_ID = "seatbelt-axfll/1";
+    const DISTRACTED_DRIVING_MODEL_ID = "ai-solution-distracted-driving/1";
+    const SLEEP_MODEL_ID = "ai-solution-sleep/1";
+    const FIRE_MODEL_ID = "fire-detection-yolov8-ylrh2/1";
+    const SMOKE_MODEL_ID = "smoke-detection-yolov8/1"; // Smoke Detection Model ID
+
+    let weaponDetectionEnabled = true;
+    let facialExpressionEnabled = true;
+    let seatbeltDetectionEnabled = true;
+    let distractedDrivingEnabled = true;
+    let sleepDetectionEnabled = true;
+    let fireDetectionEnabled = true;
+    let smokeDetectionEnabled = true;  // Track smoke detection status
+
+    // Start the camera feed
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => console.error("Error accessing the camera: ", err));
+
+    // Function to send frames to the Roboflow API for object detection
+    async function runDetection() {
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      predictionsList.innerHTML = ''; // Clear previous predictions
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const tempCtx = canvas.getContext("2d");
+      tempCtx.drawImage(video, 0, 0);
+
+      canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append("file", blob);
+
+        try {
+          // Weapon Detection
+          if (weaponDetectionEnabled) {
+            const weaponResponse = await fetch(`${API_URL}/${WEAPON_MODEL_ID}?api_key=${API_KEY}`, {
+              method: "POST",
+              body: formData,
+            });
+            const weaponData = await weaponResponse.json();
+            if (weaponData.predictions) {
+              weaponData.predictions.forEach(prediction => {
+                const { x, y, width, height, class: label, confidence } = prediction;
+                const boxX = x - width / 2;
+                const boxY = y - height / 2;
+
+                ctx.strokeStyle = "lime";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, width, height);
+                ctx.fillStyle = "lime";
+                ctx.font = "16px Arial";
+                ctx.fillText(label, boxX, boxY - 10);
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = ` <strong>Class:</strong> ${label} <strong>Confidence:</strong> ${(confidence * 100).toFixed(2)}%`;
+                predictionsList.appendChild(listItem);
+              });
+            }
+          }
+
+          // Facial Expression Detection
+          if (facialExpressionEnabled) {
+            const facialResponse = await fetch(`${API_URL}/${FACIAL_MODEL_ID}?api_key=${API_KEY}`, {
+              method: "POST",
+              body: formData,
+            });
+            const facialData = await facialResponse.json();
+            if (facialData.predictions) {
+              facialData.predictions.forEach(prediction => {
+                const { x, y, width, height, class: label, confidence } = prediction;
+                const boxX = x - width / 2;
+                const boxY = y - height / 2;
+
+                ctx.strokeStyle = "yellow";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, width, height);
+                ctx.fillStyle = "yellow";
+                ctx.font = "16px Arial";
+                ctx.fillText(label, boxX, boxY - 10);
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = ` <strong>Class:</strong> ${label} <strong>Confidence:</strong> ${(confidence * 100).toFixed(2)}%`;
+                predictionsList.appendChild(listItem);
+              });
+            }
+          }
+
+          // Seatbelt Detection
+          if (seatbeltDetectionEnabled) {
+            const seatbeltResponse = await fetch(`${API_URL}/${SEATBELT_MODEL_ID}?api_key=${API_KEY}`, {
+              method: "POST",
+              body: formData,
+            });
+            const seatbeltData = await seatbeltResponse.json();
+            if (seatbeltData.predictions) {
+              seatbeltData.predictions.forEach(prediction => {
+                const { x, y, width, height, class: label, confidence } = prediction;
+                const boxX = x - width / 2;
+                const boxY = y - height / 2;
+
+                ctx.strokeStyle = "cyan";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, width, height);
+                ctx.fillStyle = "cyan";
+                ctx.font = "16px Arial";
+                ctx.fillText(label, boxX, boxY - 10);
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = ` <strong>Class:</strong> ${label} <strong>Confidence:</strong> ${(confidence * 100).toFixed(2)}%`;
+                predictionsList.appendChild(listItem);
+              });
+            }
+          }
+
+          // Distracted Driving Detection
+          if (distractedDrivingEnabled) {
+            const distractedDrivingResponse = await fetch(`${API_URL}/${DISTRACTED_DRIVING_MODEL_ID}?api_key=${API_KEY}`, {
+              method: "POST",
+              body: formData,
+            });
+            const distractedDrivingData = await distractedDrivingResponse.json();
+            if (distractedDrivingData.predictions) {
+              distractedDrivingData.predictions.forEach(prediction => {
+                const { x, y, width, height, class: label, confidence } = prediction;
+                const boxX = x - width / 2;
+                const boxY = y - height / 2;
+
+                ctx.strokeStyle = "purple";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, width, height);
+                ctx.fillStyle = "purple";
+                ctx.font = "16px Arial";
+                ctx.fillText(label, boxX, boxY - 10);
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = ` <strong>Class:</strong> ${label} <strong>Confidence:</strong> ${(confidence * 100).toFixed(2)}%`;
+                predictionsList.appendChild(listItem);
+              });
+            }
+          }
+
+          // Sleep Detection
+          if (sleepDetectionEnabled) {
+            const sleepResponse = await fetch(`${API_URL}/${SLEEP_MODEL_ID}?api_key=${API_KEY}`, {
+              method: "POST",
+              body: formData,
+            });
+            const sleepData = await sleepResponse.json();
+            if (sleepData.predictions) {
+              sleepData.predictions.forEach(prediction => {
+                const { x, y, width, height, class: label, confidence } = prediction;
+                const boxX = x - width / 2;
+                const boxY = y - height / 2;
+
+                ctx.strokeStyle = "orange";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, width, height);
+                ctx.fillStyle = "orange";
+                ctx.font = "16px Arial";
+                ctx.fillText(label, boxX, boxY - 10);
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = ` <strong>Class:</strong> ${label} <strong>Confidence:</strong> ${(confidence * 100).toFixed(2)}%`;
+                predictionsList.appendChild(listItem);
+              });
+            }
+          }
+
+          // Fire Detection
+          if (fireDetectionEnabled) {
+            const fireResponse = await fetch(`${API_URL}/${FIRE_MODEL_ID}?api_key=${API_KEY}`, {
+              method: "POST",
+              body: formData,
+            });
+            const fireData = await fireResponse.json();
+            if (fireData.predictions) {
+              fireData.predictions.forEach(prediction => {
+                const { x, y, width, height, class: label, confidence } = prediction;
+                const boxX = x - width / 2;
+                const boxY = y - height / 2;
+
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, width, height);
+                ctx.fillStyle = "red";
+                ctx.font = "16px Arial";
+                ctx.fillText(label, boxX, boxY - 10);
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = ` <strong>Class:</strong> ${label} <strong>Confidence:</strong> ${(confidence * 100).toFixed(2)}%`;
+                predictionsList.appendChild(listItem);
+              });
+            }
+          }
+
+          // Smoke Detection
+          if (smokeDetectionEnabled) {
+            const smokeResponse = await fetch(`${API_URL}/${SMOKE_MODEL_ID}?api_key=${API_KEY}`, {
+              method: "POST",
+              body: formData,
+            });
+            const smokeData = await smokeResponse.json();
+            if (smokeData.predictions) {
+              smokeData.predictions.forEach(prediction => {
+                const { x, y, width, height, class: label, confidence } = prediction;
+                const boxX = x - width / 2;
+                const boxY = y - height / 2;
+
+                ctx.strokeStyle = "gray";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(boxX, boxY, width, height);
+                ctx.fillStyle = "gray";
+                ctx.font = "16px Arial";
+                ctx.fillText(label, boxX, boxY - 10);
+
+                const listItem = document.createElement("li");
+                listItem.innerHTML = ` <strong>Class:</strong> ${label} <strong>Confidence:</strong> ${(confidence * 100).toFixed(2)}%`;
+                predictionsList.appendChild(listItem);
+              });
+            }
+          }
+
+        } catch (error) {
+          console.error("Error during inference:", error);
+        }
+      }, "image/jpeg");
+    }
+
+    // Listen for changes on the toggle switches
+    toggleWeaponDetection.addEventListener("change", () => {
+      weaponDetectionEnabled = toggleWeaponDetection.checked;
+    });
+    toggleFacialExpression.addEventListener("change", () => {
+      facialExpressionEnabled = toggleFacialExpression.checked;
+    });
+    toggleSeatbeltDetection.addEventListener("change", () => {
+      seatbeltDetectionEnabled = toggleSeatbeltDetection.checked;
+    });
+    toggleDistractedDriving.addEventListener("change", () => {
+      distractedDrivingEnabled = toggleDistractedDriving.checked;
+    });
+    toggleSleepDetection.addEventListener("change", () => {
+      sleepDetectionEnabled = toggleSleepDetection.checked;
+    });
+    toggleFireDetection.addEventListener("change", () => {
+      fireDetectionEnabled = toggleFireDetection.checked;
+    });
+    toggleSmokeDetection.addEventListener("change", () => {
+      smokeDetectionEnabled = toggleSmokeDetection.checked;
+    });
+
+    // Run detection every second
+    setInterval(runDetection, 1000);
+  </script>
+</body>
+</html>
