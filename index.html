@@ -5,88 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Real-Time Detection</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-  body {
-    background-color: #222831; /* Dark background */
-    color: #eeeeee; /* Light text for readability */
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh; /* Full viewport height */
-    margin: 0; /* Remove default margin */
-  }
-
-  .container {
-    text-align: center;
-    padding: 20px;
-    width: 100%;
-    max-width: 1200px;
-  }
-
-  h1 {
-    color: #F8B195; /* Light pink */
-    margin-bottom: 40px;
-    font-weight: bold;
-  }
-
-  p, .description {
-    color: #cccccc;
-    margin-bottom: 20px;
-  }
-
-  #camera-container {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 30px;
-  }
-
-  video, canvas {
-    max-width: 100%;
-    border-radius: 10px;
-    width: 640px; /* Set the camera width */
-    height: 480px; /* Set the camera height */
-  }
-
-  #overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    border-radius: 10px;
-  }
-
-  .instructions {
-    background-color: #F67280; /* Coral pink */
-    padding: 20px;
-    border-radius: 10px;
-    color: #222831; /* Dark background for text readability */
-    font-size: 1.1rem;
-    margin-bottom: 30px;
-  }
-
-  .description {
-    font-size: 0.85rem;
-    margin-top: 8px;
-    color: #cccccc;
-  }
-
-  .alert-info {
-    background-color: #6C5B7B; /* Dusty purple */
-    color: #eeeeee;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 20px;
-  }
-
-  /* Responsive design */
-  @media (max-width: 768px) {
-    .btn-custom {
-      font-size: 0.9rem;
+  <style>
+    body {
+      background-color: #222831; /* Dark background */
+      color: #eeeeee; /* Light text for readability */
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-  }
-</style>
+
+    .container {
+      text-align: center;
+      padding: 20px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    h1 {
+      color: #F8B195; /* Light pink */
+      margin-bottom: 40px;
+      font-weight: bold;
+    }
+
+    p, .description {
+      color: #cccccc;
+      margin-bottom: 20px;
+    }
+
+    /* Camera container centering with Bootstrap flex utilities */
+    #camera-container {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 640px; /* Explicit width to match the video/canvas */
+      height: 480px; /* Explicit height to match the video/canvas */
+      margin-bottom: 30px; /* Margin below the camera container */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Video or canvas inside the container */
+    video, canvas {
+      max-width: 100%;
+      border-radius: 10px;
+      width: 640px; /* Set the camera width */
+      height: 480px; /* Set the camera height */
+    }
+
+    /* Overlay styling */
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%; /* Match the width of the container */
+      height: 100%; /* Match the height of the container */
+      border-radius: 10px;
+      z-index: 10; /* Make sure the overlay is above the camera content */
+    }
+
+    .instructions {
+      background-color: #F67280; /* Coral pink */
+      padding: 20px;
+      border-radius: 10px;
+      color: #222831; /* Dark background for text readability */
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+    }
+
+    .description {
+      font-size: 0.85rem;
+      margin-top: 8px;
+      color: #cccccc;
+    }
+
+    .alert-info {
+      background-color: #6C5B7B; /* Dusty purple */
+      color: #eeeeee;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .btn-custom {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="container text-center my-5">
@@ -94,41 +104,68 @@
     <p class="lead">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas id tortor luctus, volutpat justo sit amet, sodales odio. Etiam pellentesque id neque nec finibus. Nunc sodales accumsan est, et condimentum nibh rutrum a. Fusce eget dui sit amet nibh efficitur euismod non ut nisi. Morbi lacinia est vel ipsum imperdiet porttitor. Curabitur quis ex quis diam elementum dapibus. Ut condimentum, mi eget cursus interdum, justo odio consectetur elit, vitae pharetra mauris eros in magna</p>
 
     <!-- Toggle Switches for all models -->
-    <div class="mb-3">
-      <label for="toggleWeaponDetection" class="form-label text-light">Enable Weapon Detection</label>
-      <input type="checkbox" class="form-check-input" id="toggleWeaponDetection" checked>
-    </div>
-    <div class="mb-3">
-      <label for="toggleFacialExpression" class="form-label text-light">Enable Facial Expression Detection</label>
-      <input type="checkbox" class="form-check-input" id="toggleFacialExpression" checked>
-    </div>
-    <div class="mb-3">
-      <label for="toggleSeatbeltDetection" class="form-label text-light">Enable Seatbelt Detection</label>
-      <input type="checkbox" class="form-check-input" id="toggleSeatbeltDetection" checked>
-    </div>
-    <div class="mb-3">
-      <label for="toggleDistractedDriving" class="form-label text-light">Enable Distracted Driving Detection</label>
-      <input type="checkbox" class="form-check-input" id="toggleDistractedDriving" checked>
-    </div>
-    <div class="mb-3">
-      <label for="toggleSleepDetection" class="form-label text-light">Enable Sleep Detection</label>
-      <input type="checkbox" class="form-check-input" id="toggleSleepDetection" checked>
-    </div>
-    <div class="mb-3">
-      <label for="toggleFireDetection" class="form-label text-light">Enable Fire Detection</label>
-      <input type="checkbox" class="form-check-input" id="toggleFireDetection" checked>
-    </div>
-    <div class="mb-3">
-      <label for="toggleSmokeDetection" class="form-label text-light">Enable Smoke Detection</label>
-      <input type="checkbox" class="form-check-input" id="toggleSmokeDetection" checked>
+    <div class="row mb-4">
+      <div class="col-12 col-md-6">
+        <label for="toggleWeaponDetection" class="form-label text-light">Enable Weapon Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="toggleWeaponDetection" checked>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="toggleFacialExpression" class="form-label text-light">Enable Facial Expression Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="toggleFacialExpression" checked>
+        </div>
+      </div>
     </div>
 
-    <div class="mb-3">
-      <label for="togglePassengerDetection" class="form-label text-light">Enable Passenger Detection</label>
-      <input type="checkbox" class="form-check-input" id="togglePassengerDetection" checked>
+    <div class="row mb-4">
+      <div class="col-12 col-md-6">
+        <label for="toggleSeatbeltDetection" class="form-label text-light">Enable Seatbelt Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="toggleSeatbeltDetection" checked>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="toggleDistractedDriving" class="form-label text-light">Enable Distracted Driving Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="toggleDistractedDriving" checked>
+        </div>
+      </div>
     </div>
+
+    <div class="row mb-4">
+      <div class="col-12 col-md-6">
+        <label for="toggleSleepDetection" class="form-label text-light">Enable Sleep Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="toggleSleepDetection" checked>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="toggleFireDetection" class="form-label text-light">Enable Fire Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="toggleFireDetection" checked>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-12 col-md-6">
+        <label for="toggleSmokeDetection" class="form-label text-light">Enable Smoke Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="toggleSmokeDetection" checked>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <label for="togglePassengerDetection" class="form-label text-light">Enable Passenger Detection</label>
+        <div class="form-switch">
+          <input type="checkbox" class="form-check-input" id="togglePassengerDetection" checked>
+        </div>
+      </div>
+    </div>
+
     <!-- Camera and overlay setup -->
-    <div id="camera-container">
+    <div id="camera-container" class="d-flex justify-content-center align-items-center">
       <video id="camera" autoplay playsinline width="640" height="480"></video>
       <canvas id="overlay" width="640" height="480"></canvas>
     </div>
@@ -158,7 +195,7 @@
     const togglePassengerDetection = document.getElementById("togglePassengerDetection");
 
     const API_URL = "https://detect.roboflow.com";
-    const API_KEY = "JFFrjRRtfK7Ax7UbM6mK";
+    const API_KEY = "5fPlO6FLqiamk2bHx6qR";
     const WEAPON_MODEL_ID = "weapon-detection-dinou-qdunh/1";
     const FACIAL_MODEL_ID = "facial-expression-ai-solution/1";
     const SEATBELT_MODEL_ID = "seatbelt-axfll/1";
@@ -445,11 +482,11 @@
       smokeDetectionEnabled = toggleSmokeDetection.checked;
     });
     togglePassengerDetection.addEventListener("change", () => {
-      PassengerDetectionEnabled = togglePassengerDetection.checked;
+      passengerDetectionEnabled = togglePassengerDetection.checked;
     });
 
     // Run detection every second
-    setInterval(runDetection, 30);
+    setInterval(runDetection, 1000);
   </script>
 </body>
 </html>
